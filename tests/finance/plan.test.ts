@@ -3,9 +3,30 @@ import { DEFAULT_INPUTS } from "@/lib/defaults";
 import { computePlan } from "@/lib/finance/plan";
 import type { PlanInputs } from "@/lib/finance/types";
 
+// Reference scenario with a 5 % real return — the hand-verified numbers in Specs.md §6.5.
+const FIVE_PERCENT: PlanInputs = { ...DEFAULT_INPUTS, annualRate: 0.05 };
+
 describe("computePlan (composition)", () => {
-  it("default scenario: T ≈ 519.705 €, endBalance ≈ +111.705 €, verdict lasts", () => {
+  it("slider defaults (4 %): T ≈ 428.138 €, endBalance ≈ +20.138 €, verdict lasts", () => {
     const plan = computePlan(DEFAULT_INPUTS);
+    expect(plan.inputs.annualRate).toBe(0.04);
+    expect(plan.accumulation.total).toBeCloseTo(428_137.72, 1);
+    expect(plan.drawdown.endBalance).toBeCloseTo(20_137.72, 1);
+    expect(plan.lasts).toBe(true);
+  });
+
+  it("a higher return grows the total, a 0 % return reduces it to plain saving", () => {
+    const high = computePlan({ ...DEFAULT_INPUTS, annualRate: 0.1 });
+    const flat = computePlan({ ...DEFAULT_INPUTS, annualRate: 0 });
+    expect(high.accumulation.total).toBeGreaterThan(
+      computePlan(DEFAULT_INPUTS).accumulation.total,
+    );
+    // 10.000 cash + 10.000 ETF + 384 × 500 € contributions, no growth.
+    expect(flat.accumulation.total).toBeCloseTo(10_000 + 10_000 + 384 * 500, 6);
+  });
+
+  it("5 % scenario: T ≈ 519.705 €, endBalance ≈ +111.705 €, verdict lasts", () => {
+    const plan = computePlan(FIVE_PERCENT);
     expect(plan.accumulation.months).toBe(384);
     expect(plan.accumulation.etfAtRetirement).toBeCloseTo(509_704.78, 1);
     expect(plan.accumulation.total).toBeCloseTo(519_704.78, 1);

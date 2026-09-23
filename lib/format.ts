@@ -17,6 +17,17 @@ const euroCompact = new Intl.NumberFormat(LOCALE, {
 
 const integer = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 });
 
+const percentOneDecimal = new Intl.NumberFormat(LOCALE, {
+  style: "percent",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+/** 0.04 → "4,0 %" */
+export function formatPercent(fraction: number): string {
+  return percentOneDecimal.format(fraction);
+}
+
 /** "2.000 €"; switches to compact ("12,3 Mio. €") above 10 million. */
 export function formatEuro(value: number): string {
   const rounded = Math.round(value);

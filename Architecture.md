@@ -97,7 +97,7 @@ No persistence beyond that; a page reload resets to defaults (or to the URL stat
   3. Drawdown: `monthsUntilDepleted(total, monthlyGap)`, `balanceAfterMonths(total, monthlyGap, months)`.
   4. Solvers: `solveMonthlyGap`, `solveMonthlySavings`, `solveRetirementAge` (month-granular).
   5. `computePlan(inputs): PlanResult` composes all of the above.
-- Model conventions (decided, see `Specs.md` §9.3): amounts are in today's euros with a 5 % **real** return; monthly compounding with the equivalent monthly rate `(1.05)^(1/12) − 1`; contributions at the end of each month; no growth during drawdown.
+- Model conventions (decided, see `Specs.md` §9.3): amounts are in today's euros with a user-set **real** return (slider, default 4 %); monthly compounding with the equivalent monthly rate `(1 + r)^(1/12) − 1`; contributions at the end of each month; no growth during drawdown.
 - The Expert-mode inputs (later) are added as **optional fields with defaults** on `PlanInputs`, so Simple mode is just Expert mode with defaults — no second code path.
 
 ## 7. Testing strategy

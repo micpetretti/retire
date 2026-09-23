@@ -2,7 +2,7 @@
 
 Feature specification for a single-page retirement illustration tool. Companion documents: `Architecture.md` (technical decisions) and `Design.md` (visual design).
 
-> **Status of this document:** the calculation model in §6 has been reviewed (§9) and the open questions were decided with the project owner on 2026-09-23 (§9.3). The model below reflects those decisions: amounts in today's euros with 5 % real return, slider 1 is the gap savings must cover, monthly compounding, retirement-age solver in months. **v1 (Simple mode) is implemented**; the test names in §8.2 correspond to the tests under `tests/`.
+> **Status of this document:** the calculation model in §6 has been reviewed (§9) and the open questions were decided with the project owner on 2026-09-23 (§9.3). The model below reflects those decisions: amounts in today's euros with a user-set real return (slider 8, default 4 %), slider 1 is the gap savings must cover, monthly compounding, retirement-age solver in months. **v1 (Simple mode) is implemented**; the test names in §8.2 correspond to the tests under `tests/`.
 
 ---
 
@@ -58,8 +58,9 @@ Each slider is also **keyboard operable** (arrow keys ±1 step, Shift+arrow ±10
 | 5 | Savings | **Cash** | 0 – 500.000 | 1.000 | 10.000 | `€` |
 | 6 | Savings | **In ETFs** | 0 – 500.000 | 1.000 | 10.000 | `€` |
 | 7 | Savings | **ETF savings** | 0 – 5.000 | 50 | 500 | `€ / month` |
+| 8 | Savings | **Real return** | 0 – 10 % | 0,1 % | 4 % | `% / yr` (stored as a fraction, 0.04) |
 
-Defaults for sliders 2 and 3 were not specified and are proposed here: 35 (a typical age to start thinking about this) and 67 (German statutory retirement age). Default for slider 4 is 84 as specified.
+Defaults for sliders 2 and 3 were not specified and are proposed here: 35 (a typical age to start thinking about this) and 67 (German statutory retirement age). Default for slider 4 is 84 as specified. Slider 8 was added after the first version (the fixed 5 % felt optimistic); it replaces the fixed rate in the model.
 
 ### 5.2 Help popover texts
 
@@ -70,10 +71,17 @@ Text is shown when the "?" icon next to the label is clicked/tapped (popover, cl
 3. **Retire at** — "The age at which you stop working and start living off your savings. From this point on, no more money goes into ETFs and withdrawals begin. Must be at least one year after your current age."
 4. **Paid until** — "The age until which your savings need to last. The default of 84 is the average life expectancy of women in Germany (women live longer than men on average, so this is the safer assumption). Must be at least one year after your retirement age."
 5. **Cash** — "Money that is *not* invested in the capital markets: current account, savings account, cash under the mattress, fixed deposits with low interest. The illustration assumes this money does not grow."
-6. **In ETFs** — "Money you already have invested in ETFs (or similar broadly diversified investments). The illustration assumes it grows by 5 % per year *after inflation* until you retire, compounded monthly."
+6. **In ETFs** — "Money you already have invested in ETFs (or similar broadly diversified investments). The illustration grows it by the real return you set below until you retire, compounded monthly."
 7. **ETF savings** — "How much you put into ETFs every month from now until you retire. Contributions stop at retirement."
+8. **Real return** — "The yearly growth you expect from your ETFs after deducting inflation, so that all amounts stay in today's euros. Rough long-run averages after inflation, for orientation:"
+   - Savings / current account: about −1 to 0 % — usually loses to inflation.
+   - Fixed deposits, government bonds: about 0 to 2 %.
+   - Mixed portfolio of shares and bonds: about 2 to 4 %.
+   - Broad global stock ETF: about 4 to 6 % over multi-decade periods, with big swings along the way.
 
-Additionally, the result panel has a "How is this calculated?" help entry summarising §6 in plain language and listing the assumptions: all amounts are in today's euros; ETFs grow 5 % per year in real terms (after inflation) until retirement; no growth after retirement; no taxes or fees; state pension or other income is *not* modelled — slider 1 is what savings must cover on top of it.
+   "4 % is a cautious middle ground for a mostly-stock portfolio. Past returns are no guarantee for the future."
+
+Additionally, the result panel has a "How is this calculated?" help entry summarising §6 in plain language and listing the assumptions: all amounts are in today's euros; ETFs grow by the real (after-inflation) return set in slider 8 until retirement; no growth after retirement; no taxes or fees; state pension or other income is *not* modelled — slider 1 is what savings must cover on top of it.
 
 ### 5.3 Age ordering rules (sliders 2, 3, 4)
 
@@ -106,12 +114,12 @@ Symbols:
 | `C` | cash (€) | slider 5 |
 | `E` | current ETF balance (€) | slider 6 |
 | `S` | monthly ETF savings (€) | slider 7 |
-| `r` | annual **real** ETF growth rate (after inflation) | fixed **0.05** in Simple mode |
-| `i = (1 + r)^(1/12) − 1` | equivalent monthly growth rate (≈ 0,4074 %) | derived |
+| `r` | annual **real** ETF growth rate (after inflation) | slider 8 (default 0.04) |
+| `i = (1 + r)^(1/12) − 1` | equivalent monthly growth rate (≈ 0,3274 % at 4 %) | derived |
 | `N = 12 · (R − A)` | months of accumulation (≥ 12) | derived |
 | `m = 12 · (P − R)` | months of payout (≥ 12) | derived |
 
-**All amounts are in today's euros.** The 5 % is interpreted as growth *after* inflation, so a 2.000 € monthly gap keeps its purchasing power throughout. This is a wording/interpretation decision, not a computation.
+**All amounts are in today's euros.** The return `r` is the growth *after* inflation, so a 2.000 € monthly gap keeps its purchasing power throughout. This is a wording/interpretation decision, not a computation.
 
 ### 6.1 Accumulation phase (from `A` to `R`)
 
@@ -131,7 +139,8 @@ E_N = E · (1 + i)^N + S · F
 ```
 
 Conventions:
-- `i` is the **equivalent** monthly rate, so `(1 + i)^12 = 1,05` exactly and the help text "5 % per year" stays literally true. (Using `r / 12` instead would give an effective 5,12 % per year and ≈ 2 % more capital over 32 years.)
+- `i` is the **equivalent** monthly rate, so `(1 + i)^12 = 1 + r` exactly and the slider value "4,0 % per year" stays literally true. (Using `r / 12` instead would give an effective 5,12 % for a 5 % setting and ≈ 2 % more capital over 32 years.)
+- `r = 0` is handled explicitly (`i = 0`, future-value factor = number of months).
 - Contributions are made at the **end of each month** (after that month's growth). Over 32 years the difference to start-of-month is ≈ 0,4 %, i.e. negligible for an illustration.
 
 ### 6.2 Drawdown phase (from `R` to `P`)
@@ -189,7 +198,9 @@ R* = A + k*/12                          reported as "Y years M months"
 
 Each solver's result is verified in tests by feeding the solved value back into `computePlan` and asserting `endBalance ≈ 0` (a, b) or `endBalance(k*) ≥ 0` with `endBalance(k* − 1) < 0` (c).
 
-### 6.5 Worked example (default values)
+### 6.5 Worked example (reference scenario at 5 %)
+
+The hand-verified reference uses `r = 0.05`; the slider default is 4 %, for which the same scenario gives `T ≈ 428.138 €`, `endBalance ≈ +20.138 €`, `W* ≈ 2.098,71`, `S* ≈ 473,71`, `R* = 66 years 7 months` (also covered by tests).
 
 `W = 2.000, A = 35, R = 67, P = 84, C = 10.000, E = 10.000, S = 500, r = 0.05` → `i ≈ 0,00407412, N = 384, m = 204`
 
@@ -249,7 +260,7 @@ Inline SVG chart of the balance from age `A` to `P`: rising during accumulation 
 
 - A badge in the header: **"For illustration only"**.
 - The result panel headline is followed by the line: *"This is a simplified illustration to play with — not financial advice and not an actual calculation of your pension."*
-- The footer lists all assumptions of the model: all amounts in today's euros; ETFs grow 5 % p.a. after inflation before retirement, compounded monthly; 0 % growth after retirement; no taxes or fees; state pension / other income not modelled (slider 1 is the gap savings must cover); cash does not grow.
+- The footer lists all assumptions of the model: all amounts in today's euros; ETFs grow by the real (after-inflation) return set in slider 8 before retirement, compounded monthly; 0 % growth after retirement; no taxes or fees; state pension / other income not modelled (slider 1 is the gap savings must cover); cash does not grow.
 
 ## 8. Calculation functions and tests
 
@@ -360,7 +371,7 @@ All functions live in `lib/finance/` and are pure. Test names are the behaviour 
 ### 9.1 What is sound
 
 - The model is internally consistent, deterministic and monotonic in every input, which is exactly what makes sliders feel right (moving a slider one way always moves the verdict the same way).
-- Monthly compounding with monthly contributions mirrors how ETF savings plans actually work; using the equivalent monthly rate keeps "5 % per year" literally true.
+- Monthly compounding with monthly contributions mirrors how ETF savings plans actually work; using the equivalent monthly rate keeps the yearly rate shown on the slider literally true.
 - Ignoring growth during drawdown is a **conservative** simplification: real portfolios keep earning something after retirement, so the verdict errs on the side of "runs out earlier than it probably would".
 - The three solvers are well-defined: two have closed forms; the retirement-age solver is monotonic so a scan over ≤ 1.200 months is trivial and lands within one month of 0 €.
 - Cash not growing matches its definition in the help text.
@@ -371,7 +382,7 @@ All functions live in `lib/finance/` and are pure. Test names are the behaviour 
 - **No taxes or fees** (Abgeltungsteuer, Vorabpauschale, TER). Overstates the outcome by a moderate amount.
 - **No growth after retirement.** Understates the outcome (see above). Planned Expert input.
 - **State pension not modelled.** Handled by defining slider 1 as the gap savings must cover; an explicit pension input is the first Expert feature.
-- **Fixed 5 % real return, no volatility / sequence-of-returns risk.** Inherent to a deterministic illustration; disclosed.
+- **Constant real return, no volatility / sequence-of-returns risk.** Inherent to a deterministic illustration; disclosed. The user picks the rate (slider 8) and the help text gives historical ranges for orientation.
 - **Contributions and growth stop abruptly at retirement**; no glide path.
 
 ### 9.3 Decisions taken (2026-09-23)
@@ -380,7 +391,7 @@ The following were raised as open questions because they change what the numbers
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | Inflation / purchasing power | Treat 5 % as a **real** (after-inflation) return; all amounts in today's euros; stated in help texts and footer. No inflation input in v1. |
+| 1 | Inflation / purchasing power | Treat the return as **real** (after-inflation); all amounts in today's euros; stated in help texts and footer. No inflation input in v1. (Originally a fixed 5 %; now slider 8, default 4 %.) |
 | 2 | Statutory pension / other income | Slider 1 is the **monthly gap** savings must cover on top of pension/other income (label "Monthly gap"). Pension input becomes the first Expert feature. |
 | 3 | Contribution timing / compounding | **True monthly compounding**: equivalent monthly rate `i = 1,05^(1/12) − 1`, contribution at the end of each month. |
 | 4 | Retirement-age solver granularity | **Month-granular** search; result reported as "Y years M months". Apply rounds up to the next whole year. |
@@ -399,7 +410,6 @@ Listed so `PlanInputs` can be designed with optional fields and defaults from da
 | Spending | Monthly pension / other retirement income (subtracted from total need) | 0 € |
 | Spending | Toggle "amounts are nominal" + annual inflation of the monthly need | real amounts, 0 % |
 | Spending | One-off expenses at retirement (e.g. paying off a mortgage) | 0 € |
-| Savings | Expected ETF return before retirement | 5 % real |
 | Savings | Expected return during drawdown | 0 % |
 | Savings | Interest on cash | 0 % |
 | Savings | Annual savings-rate increase (e.g. +2 %/year with salary) | 0 % |
@@ -415,7 +425,7 @@ Listed so `PlanInputs` can be designed with optional fields and defaults from da
 
 ## 12. Acceptance criteria (v1)
 
-- All seven sliders present with the specified ranges, defaults, labels and help texts.
+- All eight sliders present with the specified ranges, defaults, labels and help texts.
 - Result panel and mobile sticky bar update during slider drag with no visible lag on a mid-range phone.
 - Age ordering rules behave exactly as in §5.3 with no error messages.
 - Verdict, key numbers, three "what would have to change" cards and chart reflect §6 for the default scenario and the edge cases in §6.6.

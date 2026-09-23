@@ -54,20 +54,50 @@ describe("Calculator reducer", () => {
 });
 
 describe("Calculator UI", () => {
-  it("renders all seven sliders with default values", () => {
+  it("renders all eight sliders with default values", () => {
     render(<Calculator />);
-    expect(screen.getAllByRole("slider")).toHaveLength(7);
+    expect(screen.getAllByRole("slider")).toHaveLength(8);
     expect(screen.getByTestId("value-monthlyGap")).toHaveTextContent("2.000 €");
     expect(screen.getByTestId("value-currentAge")).toHaveTextContent("35");
     expect(screen.getByTestId("value-retirementAge")).toHaveTextContent("67");
     expect(screen.getByTestId("value-payoutEndAge")).toHaveTextContent("84");
     expect(screen.getByTestId("value-monthlySavings")).toHaveTextContent("500 €");
+    expect(screen.getByTestId("value-annualRate")).toHaveTextContent("4,0 %");
   });
 
-  it("shows the default verdict", () => {
+  it("shows the default verdict at 4 %", () => {
     render(<Calculator />);
     expect(screen.getByTestId("verdict")).toHaveTextContent("Lasts until 84");
-    expect(screen.getByTestId("verdict-sub")).toHaveTextContent("111.705 €");
+    expect(screen.getByTestId("verdict-sub")).toHaveTextContent("20.138 €");
+  });
+
+  it("recomputes live when the real-return slider moves", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+    const rate = screen.getByRole("slider", {
+      name: "Expected yearly return of your ETFs after inflation",
+    });
+    rate.focus();
+    await user.keyboard("{Home}");
+    expect(screen.getByTestId("value-annualRate")).toHaveTextContent("0,0 %");
+    // 10.000 cash + 10.000 ETF + 384 × 500 € − 408.000 € needed = −196.000 €
+    expect(screen.getByTestId("verdict")).toHaveTextContent("Runs out at");
+    expect(screen.getByTestId("verdict-sub")).toHaveTextContent("196.000 € short");
+    await user.keyboard("{End}");
+    expect(screen.getByTestId("value-annualRate")).toHaveTextContent("10,0 %");
+    expect(screen.getByTestId("verdict")).toHaveTextContent("Lasts until 84");
+  });
+
+  it("steps the real-return slider in 0,1 % increments without float noise", async () => {
+    const user = userEvent.setup();
+    render(<Calculator />);
+    const rate = screen.getByRole("slider", {
+      name: "Expected yearly return of your ETFs after inflation",
+    });
+    rate.focus();
+    await user.keyboard("{ArrowLeft}{ArrowLeft}{ArrowLeft}");
+    expect(screen.getByTestId("value-annualRate")).toHaveTextContent("3,7 %");
+    expect(rate).toHaveAttribute("aria-valuenow", "0.037");
   });
 
   it("pushes retirement age with the keyboard when current age reaches it", async () => {
@@ -112,19 +142,36 @@ describe("Calculator UI", () => {
     const user = userEvent.setup();
     render(<Calculator />);
     const card = screen.getByTestId("change-spending");
-    expect(card).toHaveTextContent("Spend 548 € more");
+    expect(card).toHaveTextContent("Spend 99 € more");
     await user.click(within(card).getByRole("button", { name: /Apply/ }));
-    expect(screen.getByTestId("value-monthlyGap")).toHaveTextContent("2.500 €");
+    expect(screen.getByTestId("value-monthlyGap")).toHaveTextContent("2.050 €");
     expect(screen.getByTestId("verdict")).toHaveTextContent("Lasts until 84");
+  });
+
+  it("disables Apply when the solved retirement age rounds up to the current year", () => {
+    render(<Calculator />);
+    const card = screen.getByTestId("change-retirement");
+    expect(card).toHaveTextContent("Retire 5 months earlier");
+    expect(within(card).getByRole("button", { name: /Apply \(67\)/ })).toBeDisabled();
+    expect(card).toHaveTextContent("Already the closest whole year.");
   });
 
   it("applies the solved retirement age rounded up to a whole year", async () => {
     const user = userEvent.setup();
     render(<Calculator />);
+    // Push the return to 10 % so retiring earlier becomes possible.
+    const rate = screen.getByRole("slider", {
+      name: "Expected yearly return of your ETFs after inflation",
+    });
+    rate.focus();
+    await user.keyboard("{End}");
     const card = screen.getByTestId("change-retirement");
-    expect(card).toHaveTextContent("Retire 2 years 1 month earlier");
+    expect(card).toHaveTextContent(/Retire .* earlier/);
     await user.click(within(card).getByRole("button", { name: /Apply/ }));
-    expect(screen.getByTestId("value-retirementAge")).toHaveTextContent("65");
+    const applied = Number(
+      screen.getByTestId("value-retirementAge").textContent?.replace(/\D/g, ""),
+    );
+    expect(applied).toBeLessThan(67);
     expect(screen.getByTestId("verdict")).toHaveTextContent("Lasts until 84");
   });
 

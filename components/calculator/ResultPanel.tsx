@@ -90,7 +90,9 @@ export function ResultPanel({ result, onApply }: ResultPanelProps) {
       <section className="border-brut-b px-5 py-5 sm:px-8" aria-label="Key numbers">
         <div className="mb-3 flex items-center gap-2">
           <h3 className="uppercase-label font-sans text-sm">Key numbers</h3>
-          <HelpPopover label="How is this calculated?">{HOW_IT_WORKS}</HelpPopover>
+          <HelpPopover label="How is this calculated?">
+            <p>{HOW_IT_WORKS}</p>
+          </HelpPopover>
         </div>
         <dl className="divide-y-3 divide-ink">
           <KeyNumber

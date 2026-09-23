@@ -9,7 +9,8 @@ import {
 } from "@/lib/finance/solve";
 import type { PlanInputs } from "@/lib/finance/types";
 
-const defaults = DEFAULT_INPUTS;
+// Reference scenario with a 5 % real return — the hand-verified numbers in Specs.md §6.5.
+const defaults: PlanInputs = { ...DEFAULT_INPUTS, annualRate: 0.05 };
 const defaultPlan = computePlan(defaults);
 
 describe("solveMonthlyGap", () => {
@@ -29,8 +30,19 @@ describe("solveMonthlyGap", () => {
 });
 
 describe("solveMonthlySavings", () => {
-  it("default scenario solves to ≈ 379,12 €/month", () => {
+  it("5 % scenario solves to ≈ 379,12 €/month", () => {
     expect(solveMonthlySavings(defaults).target).toBeCloseTo(379.12, 2);
+  });
+
+  it("at 4 % (the slider default) the same scenario needs ≈ 473,71 €/month", () => {
+    expect(solveMonthlySavings(DEFAULT_INPUTS).target).toBeCloseTo(473.71, 2);
+  });
+
+  it("at 0 % return the closed form still works (future value factor = months)", () => {
+    const flat: PlanInputs = { ...defaults, annualRate: 0 };
+    const solved = solveMonthlySavings(flat);
+    const replan = computePlan({ ...flat, monthlySavings: solved.target });
+    expect(replan.drawdown.endBalance).toBeCloseTo(0, 2);
   });
 
   it("clamps to 0 and flags it when the plan already has a surplus without any savings", () => {
@@ -84,7 +96,15 @@ describe("endBalanceForAccumulationMonths", () => {
 });
 
 describe("solveRetirementAge", () => {
-  it("default scenario solves to 359 months = 64 years 11 months", () => {
+  it("at 4 % the default scenario solves to 379 months = 66 years 7 months", () => {
+    const solved = solveRetirementAge(DEFAULT_INPUTS);
+    if (solved.unreachable) throw new Error("expected reachable");
+    expect(solved.months).toBe(379);
+    expect(solved.age).toEqual({ years: 66, months: 7 });
+    expect(solved.deltaMonths).toBe(-5);
+  });
+
+  it("5 % scenario solves to 359 months = 64 years 11 months", () => {
     const solved = solveRetirementAge(defaults);
     expect(solved.unreachable).toBe(false);
     if (solved.unreachable) return;

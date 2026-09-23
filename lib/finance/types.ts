@@ -17,7 +17,7 @@ export interface PlanInputs {
   etf: number;
   /** Slider 7 — monthly ETF contributions until retirement (€/month). */
   monthlySavings: number;
-  /** Annual real growth rate of ETFs before retirement. Simple mode: 0.05. */
+  /** Slider 8 — annual real (after-inflation) growth rate of ETFs before retirement, as a fraction (0.04 = 4 %). */
   annualRate: number;
 }
 

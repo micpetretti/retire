@@ -4,7 +4,7 @@ import * as Slider from "@radix-ui/react-slider";
 import { useState, type CSSProperties } from "react";
 import { SLIDER_COPY } from "@/lib/copy";
 import { SLIDERS, type SliderField as SliderFieldId } from "@/lib/defaults";
-import { formatEuro, formatInteger } from "@/lib/format";
+import { formatEuro, formatInteger, formatPercent } from "@/lib/format";
 import { HelpPopover } from "./HelpPopover";
 
 export type Accent = "sun" | "sky" | "lilac";
@@ -48,6 +48,8 @@ function formatValue(
       return { text: formatEuro(value), unit: "" };
     case "years":
       return { text: formatInteger(value), unit: " yrs" };
+    case "percent":
+      return { text: formatPercent(value), unit: "/yr" };
   }
 }
 
@@ -60,11 +62,20 @@ function valueText(field: SliderFieldId, value: number): string {
       return formatEuro(value);
     case "years":
       return `${value} years`;
+    case "percent":
+      return `${formatPercent(value)} per year after inflation`;
   }
 }
 
 function formatRangeEnd(field: SliderFieldId, value: number): string {
-  return SLIDER_COPY[field].unit === "years" ? String(value) : formatEuro(value);
+  switch (SLIDER_COPY[field].unit) {
+    case "years":
+      return String(value);
+    case "percent":
+      return formatPercent(value);
+    default:
+      return formatEuro(value);
+  }
 }
 
 export function SliderField({
@@ -105,7 +116,17 @@ export function SliderField({
             {copy.label}
           </span>
           <HelpPopover label={`Explain ${copy.label.toLowerCase()}`}>
-            {copy.help}
+            <p>{copy.help}</p>
+            {copy.helpList && (
+              <ul className="flex flex-col gap-1 pl-4">
+                {copy.helpList.map((item) => (
+                  <li key={item} className="list-[square]">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {copy.helpFooter && <p>{copy.helpFooter}</p>}
           </HelpPopover>
         </div>
         <output

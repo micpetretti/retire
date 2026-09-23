@@ -11,6 +11,7 @@ import { SECTIONS } from "@/lib/copy";
 import {
   DEFAULT_INPUTS,
   SLIDERS,
+  snapToSlider,
   type SliderField as SliderFieldId,
 } from "@/lib/defaults";
 import { computePlan } from "@/lib/finance/plan";
@@ -35,7 +36,9 @@ const initialState: State = {
 };
 
 export function reducer(state: State, action: Action): State {
-  const candidate: PlanInputs = { ...state.inputs, [action.field]: action.value };
+  // Snap to the slider step so fractional steps (the rate slider) never carry float noise.
+  const value = snapToSlider(action.field, action.value);
+  const candidate: PlanInputs = { ...state.inputs, [action.field]: value };
   if (!isAgeField(action.field)) {
     return { ...state, inputs: candidate };
   }

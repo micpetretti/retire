@@ -3,6 +3,7 @@ import {
   formatAge,
   formatEuro,
   formatMonthsLong,
+  formatPercent,
   formatSignedEuro,
   formatYearsMonths,
   formatYearsMonthsLong,
@@ -22,6 +23,16 @@ describe("formatEuro", () => {
 
   it("switches to compact notation above 10 million", () => {
     expect(plain(formatEuro(12_300_000))).toBe("12,3 Mio. €");
+  });
+});
+
+describe("formatPercent", () => {
+  it("formats 0.04 as 4,0 %", () => {
+    expect(plain(formatPercent(0.04))).toBe("4,0 %");
+  });
+
+  it("keeps one decimal for 0.037", () => {
+    expect(plain(formatPercent(0.037))).toBe("3,7 %");
   });
 });
 

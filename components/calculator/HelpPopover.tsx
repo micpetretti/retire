@@ -35,7 +35,7 @@ export function HelpPopover({ label, children, className = "" }: HelpPopoverProp
           className="border-brut z-50 w-[min(320px,calc(100vw-2rem))] bg-surface p-4 font-sans text-base font-medium leading-snug shadow-hard-md outline-none"
         >
           <div className="flex items-start gap-3">
-            <p className="flex-1">{children}</p>
+            <div className="flex flex-1 flex-col gap-2">{children}</div>
             <Popover.Close
               aria-label="Close explanation"
               className="border-brut pushable -mr-1 -mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center bg-surface shadow-hard-xs"
