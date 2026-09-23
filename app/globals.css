@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/* Design tokens — see Design.md §2 */
+@theme {
+  --color-ink: #000000;
+  --color-paper: #fffdf5;
+  --color-surface: #ffffff;
+  --color-acid: #c6ff00;
+  --color-hot: #ff3d71;
+  --color-sky: #3d8bff;
+  --color-sun: #ffd400;
+  --color-lilac: #b49cff;
+  --color-mint: #4dffb8;
+  --color-muted: #6b6b6b;
+
+  --font-display: var(--font-archivo-black), Impact, sans-serif;
+  --font-sans: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --shadow-hard-sm: 4px 4px 0 0 #000000;
+  --shadow-hard-md: 8px 8px 0 0 #000000;
+  --shadow-hard-lg: 12px 12px 0 0 #000000;
+  --shadow-hard-xs: 2px 2px 0 0 #000000;
+  --shadow-hard-hover-sm: 6px 6px 0 0 #000000;
+  --shadow-hard-hover-md: 10px 10px 0 0 #000000;
+  --shadow-hard-none: 0 0 0 0 #000000;
+
+  --breakpoint-lg: 64rem;
+}
+
+:root {
+  --border-w: 3px;
+}
+
+@media (min-width: 64rem) {
+  :root {
+    --border-w: 4px;
+  }
+}
+
+html {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100%;
+}
+
+/* Thick outline that switches 3px → 4px at the desktop breakpoint */
+@utility border-brut {
+  border-style: solid;
+  border-width: var(--border-w);
+  border-color: var(--color-ink);
+}
+
+@utility border-brut-t {
+  border-top-style: solid;
+  border-top-width: var(--border-w);
+  border-top-color: var(--color-ink);
+}
+
+@utility border-brut-b {
+  border-bottom-style: solid;
+  border-bottom-width: var(--border-w);
+  border-bottom-color: var(--color-ink);
+}
+
+@utility border-brut-l {
+  border-left-style: solid;
+  border-left-width: var(--border-w);
+  border-left-color: var(--color-ink);
+}
+
+/* Diagonal hatch for disabled states — hard stops only, so no gradient softness */
+@utility bg-hatch {
+  background-color: var(--color-surface);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-ink) 0 2px,
+    transparent 2px 10px
+  );
+}
+
+/* Physical "push" interaction for clickable elements — Design.md §2.2 */
+@utility pushable {
+  transition:
+    transform 80ms linear,
+    box-shadow 80ms linear;
+  &:hover:not(:disabled) {
+    transform: translate(-2px, -2px);
+  }
+  &:active:not(:disabled) {
+    transform: translate(4px, 4px);
+    box-shadow: var(--shadow-hard-none);
+  }
+}
+
+@utility uppercase-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Flash used when an age slider is pushed by a neighbour */
+@keyframes brut-flash {
+  0% {
+    background-color: var(--flash-color, var(--color-sun));
+  }
+  100% {
+    background-color: var(--color-surface);
+  }
+}
+
+@utility animate-flash {
+  animation: brut-flash 150ms linear;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}
